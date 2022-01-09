@@ -1,4 +1,4 @@
-# rfxcom2mqtt
+# RFXCOM2MQTT
 RFXCOM to MQTT bridge for RFXtrx433 devices
 
 *Work in Progress*
