@@ -1,5 +1,5 @@
 # rfxcom2mqtt
-RFXCOM to MQTT bridge
+RFXCOM to MQTT bridge for RFXtrx433 devices
 
 Based on the [RFXCOM](https://github.com/rfxcom/node-rfxcom) Node library for the communication with the RfxCom Device.
 
