@@ -2,19 +2,30 @@
 
 const mqtt = require('mqtt'); 
 const rfxcom = require('rfxcom');
+const config = require('node-config-yaml').load("./config.yml");
 
-const device = "/dev/ttyUSB0"
-const topic = 'rfxcom2mqtt/devices'
-const topic_will = 'rfxcom2mqtt/status'
-const topic_info = 'rfxcom2mqtt/info'
-const topic_command = 'rfxcom2mqtt/command'
-const topic_connected = 'rfxcom2mqtt/connected'
+const device = config.rfxcom.device;
+const topic = 'rfxcom2mqtt/devices';
+const topic_will = 'rfxcom2mqtt/status';
+const topic_info = 'rfxcom2mqtt/info';
+const topic_command = 'rfxcom2mqtt/command';
+const topic_connected = 'rfxcom2mqtt/connected';
 
-console.log('RFXCOM2MQTT');
+console.log('RFXCOM2MQTT Starting...');
 
 const will = {"topic": topic_will, "payload": "offline", "retain": "true"}
-const options = {"will": will, "username": <username>, "password": <Password>)}
-const mqttClient = mqtt.connect("tcp://<ip-address>:1883", options)
+const options = {"will": will}
+if (config.mqtt.username) {
+  options.username = config.mqtt.username;
+  options.password = config.mqtt.password;
+}
+
+var port = "1883"
+if (config.mqtt.port) {
+  port = config.mqtt.port;
+}
+
+const mqttClient = mqtt.connect(config.mqtt.server + ':' + port, options)
 
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT')
@@ -95,11 +106,11 @@ function replacer(key, value) {
 }
 
 rfxtrx.on("status", function (evt) {
-  var json = JSON.stringify(evt, replacer, 2)
+  var json = JSON.stringify(evt, replacer, 2);
 
   mqttClient.publish(topic_info, json, { qos: 0, retain: false }, (error) => {
     if (error) {
-      console.error(error)
+      console.error(error);
     }
   })
   console.log(json);

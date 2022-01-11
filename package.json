@@ -7,8 +7,7 @@
   "dependencies": {
     "mqtt": "^2.15.0",
     "rfxcom": "^2.4.0",
-    "config": "^3.3.6",
-    "js-yaml": "^4.1.0"
+    "node-config-yaml": "^0.1.4"
   },
   "author": "Legobas<legobas@github.com>",
   "license": "Apache-2.0"
