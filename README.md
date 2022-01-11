@@ -6,12 +6,24 @@ It is up to the MQTT receiver to filter these messages or to have a register/lea
 
 ## Todo
 
-* Configuration
 * Support all protocols
 
 ## Usage
 
-Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
+### Configuration
+
+Example **config.yml**:
+
+    mqtt:
+      server: mqtt://<IP ADDRESS>
+      port: <PORTNUMBER>
+      username: <USERNAME>
+      password: <PASSWORD>
+    rfxcom:
+      device: /dev/ttyUSB0
+
+
+### Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
 
 Example JSON message on topic "rfxcom2mqtt/devices/0x9D07":
 
@@ -27,7 +39,7 @@ Example JSON message on topic "rfxcom2mqtt/devices/0x9D07":
       "rssi": 5
     }
 
-Publish commands to topic: **rfxcom2mqtt/commmand**
+### Publish commands to topic: **rfxcom2mqtt/commmand**
 
 Example for Cucu Dimmer:
 
