@@ -1,6 +1,9 @@
 # RFXCOM2MQTT
 RFXCOM to MQTT bridge for RFXtrx433 devices
 
+All received RFXCOM events are published to the rfxcom2mqtt/devices Topic.
+It is up to the MQTT receiver to filter these messages or to create a register mechanism.
+
 ## Todo
 
 * Configuration
@@ -8,7 +11,23 @@ RFXCOM to MQTT bridge for RFXtrx433 devices
 
 ## Usage
 
-Publish commands to Topic: **rfxcom2mqtt/commmand**
+Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
+
+Example JSON message on topic "rfxcom2mqtt/devices/0x9D07":
+
+    {
+      "type":"temperaturehumidity1",
+      "subtype": 12,
+      "id": "0x9D07",
+      "seqnbr": 206,
+      "temperature": 17.5,
+      "humidity": 58,
+      "humidityStatus": 1,
+      "batteryLevel": 9,
+      "rssi": 5
+    }
+
+Publish commands to topic: **rfxcom2mqtt/commmand**
 
 Example for Cucu Dimmer:
 
