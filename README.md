@@ -2,7 +2,7 @@
 RFXCOM to MQTT bridge for RFXtrx433 devices
 
 All received RFXCOM events are published to the rfxcom2mqtt/devices/\<id\> Topic.
-It is up to the MQTT receiver to filter these messages or to create a register mechanism.
+It is up to the MQTT receiver to filter these messages or to create a register/learning/pairing mechanism.
 
 ## Todo
 
