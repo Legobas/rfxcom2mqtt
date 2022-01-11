@@ -1,7 +1,10 @@
 # RFXCOM2MQTT
 RFXCOM to MQTT bridge for RFXtrx433 devices
 
-*Work in Progress*
+## Todo
+
+* Configuration
+* Support all protocols
 
 ## Usage
 
