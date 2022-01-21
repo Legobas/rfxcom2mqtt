@@ -6,12 +6,30 @@ It is up to the MQTT receiver to filter these messages or to have a register/lea
 
 ## Todo
 
-* Configuration
 * Support all protocols
+* Repeat commands
+* Name known devices
 
 ## Usage
 
-Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
+### Configuration
+
+Example **config.yml**:
+
+    mqtt:
+      server: mqtt://<IP ADDRESS>
+      port: <PORTNUMBER>
+      username: <USERNAME>
+      password: <PASSWORD>
+    rfxcom:
+      device: /dev/ttyUSB0
+
+###
+List of available commands: 
+[DeviceCommands](https://github.com/rfxcom/node-rfxcom/blob/master/DeviceCommands.md)
+
+
+### Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
 
 Example JSON message on topic "rfxcom2mqtt/devices/0x9D07":
 
@@ -27,7 +45,7 @@ Example JSON message on topic "rfxcom2mqtt/devices/0x9D07":
       "rssi": 5
     }
 
-Publish commands to topic: **rfxcom2mqtt/commmand**
+### Publish commands to topic: **rfxcom2mqtt/commmand**
 
 Example for Cucu Dimmer:
 
@@ -39,6 +57,6 @@ Example for Cucu Dimmer:
 
 ----
 
-Uses the [RFXCOM](https://github.com/rfxcom/node-rfxcom) Node library for the communication with the [RFXCOM](http://www.rfxcom.com) RFXtrx433 USB 433.92MHz Transceiver.
+Uses the [RFXCOM](https://github.com/rfxcom/node-rfxcom) Node library for the communication with the [RFXCOM](http://www.rfxcom.com) RFXtrx433 433.92MHz Transceiver.
 
 Uses the [MQTT.js](https://github.com/mqttjs/MQTT.js) library for sending and receiving MQTT messages.
