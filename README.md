@@ -7,6 +7,8 @@ It is up to the MQTT receiver to filter these messages or to have a register/lea
 ## Todo
 
 * Support all protocols
+* Repeat commands
+* Name known devices
 
 ## Usage
 
@@ -21,6 +23,10 @@ Example **config.yml**:
       password: <PASSWORD>
     rfxcom:
       device: /dev/ttyUSB0
+
+###
+List of available commands: 
+[DeviceCommands](https://github.com/rfxcom/node-rfxcom/blob/master/DeviceCommands.md)
 
 
 ### Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
