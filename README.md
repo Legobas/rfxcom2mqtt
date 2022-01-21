@@ -6,8 +6,7 @@ It is up to the MQTT receiver to filter these messages or to have a register/lea
 
 ## Todo
 
-* Support all protocols
-* Repeat commands
+* Support all protocols for transmit
 * Name known devices
 
 ## Usage
