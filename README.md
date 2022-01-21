@@ -14,15 +14,7 @@ It is up to the MQTT receiver to filter these messages or to have a register/lea
 
 ### Configuration
 
-Example **config.yml**:
-
-    mqtt:
-      server: mqtt://<IP ADDRESS>
-      port: <PORTNUMBER>
-      username: <USERNAME>
-      password: <PASSWORD>
-    rfxcom:
-      device: /dev/ttyUSB0
+See example **config.yml**
 
 ###
 List of available commands: 
