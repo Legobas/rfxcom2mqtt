@@ -1,0 +1,34 @@
+debug: true
+
+mqtt:
+  base_topic: rfxcom2mqtt
+  server: tcp://<IP ADDRESS>
+  username: <USERNAME>
+  password: <PASSWORD>
+
+rfxcom:
+  usbport: /dev/ttyUSB0
+  debug: false
+  transmit:
+    repeat: 4
+    lighting1:
+      - X10
+      - ARC
+      - ELRO
+      - PHILIPS_SBC
+    lighting2:
+      - AC
+      - HOMEEASY_EU
+    lighting3:
+      - KOPPLA
+    lighting4:
+      - PT2262
+  receive:
+    - temperaturehumidity1
+    - homeconfort
+    - lighting1
+    - lighting2
+    - lighting3
+    - lighting4
+    - remote
+    - security1
