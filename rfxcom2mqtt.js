@@ -46,7 +46,7 @@ mqttClient.on('connect', () => {
 
 const sendToMQTT = function(type, evt) {
   var json = JSON.stringify(evt, null, 2)
-  json = json.replace("{", "{\n  \"type\":\"" + type + "\",")
+  json = json.slice(0,1) + "\n  \"type\":\"" + type + "\"," + json.slice(1)
 
   var device = evt.id;
   if (type === "lighting4") {
