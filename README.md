@@ -20,6 +20,7 @@ List of available commands:
 [DeviceCommands](https://github.com/rfxcom/node-rfxcom/blob/master/DeviceCommands.md)
 
 
+
 ### Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
 
 Example JSON message on topic "rfxcom2mqtt/devices/0x9D07":
