@@ -1,0 +1,12 @@
+version: "3.8"
+
+services: 
+  rfxtrx2mqtt:
+    image: legobas/rfxcom2mqtt
+    container_name: rfxcom2mqtt
+    build: /home/legobas/rfxcom2mqtt
+    volumes:
+      - /home/legobas/data/rfxcom2mqtt:/app/data
+    devices:
+      - /dev/ttyUSB1:/dev/ttyUSB0
+    restart: unless-stopped
