@@ -5,6 +5,8 @@ mqtt:
   server: tcp://<IP ADDRESS>
   username: <USERNAME>
   password: <PASSWORD>
+  qos: 0
+  retain: false
 
 rfxcom:
   usbport: /dev/ttyUSB0
@@ -32,3 +34,33 @@ rfxcom:
     - lighting4
     - remote
     - security1
+
+devices:
+  - id: '0x5C02'
+    title: 'Bathroom Temp & Hum'
+
+  - id: '0xB9459A'
+    title: 'Garden motion'
+
+  - id: '1001010/1'
+    name: 'CucuDimmer'
+    title: 'Kitchen Dimmer Light'
+    type: 'lighting2'
+
+  - id: '0x012E00FF'
+    name: 'Living Room switch'
+
+  - id: '0x00ED400F'
+    name: 'Lights'
+    type: 'lighting2'
+
+  - id: '0x3D090F'
+    name: 'Switch1'
+    command: 'on'
+    title: 'Living Room Lights on'
+    type: 'lighting4'
+  - id: '0x3D090E'
+    name: 'Switch1'
+    command: 'off'
+    title: 'Living Room Lights off'
+    type: 'lighting4'
