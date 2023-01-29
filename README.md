@@ -1,4 +1,7 @@
 # RFXCOM2MQTT
+
+[![RFXCOM](rfxcom.png)](http://www.rfxcom.com)
+
 RFXCOM to MQTT bridge for RFXtrx433 devices
 
 All received RFXCOM events are published to the MQTT rfxcom2mqtt/devices/\<id\> topic.
