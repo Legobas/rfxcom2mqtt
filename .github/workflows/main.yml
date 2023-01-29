@@ -2,10 +2,12 @@ name: CI/CD
 
 on: push
 
+env:
+  IMAGE_TAG: legobas/rfxcom2mqtt:latest
+
 jobs:
   build:
     name: Docker build
-
     runs-on: ubuntu-latest
 
     steps:
@@ -13,4 +15,23 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build Docker image
-        run: docker build --tag rfxcom2mqtt .
+        run: docker build --tag "${IMAGE_TAG}" .
+
+      # Archive and persist the Docker image
+      - name: Save Docker image
+        run: docker save --output image.tar "${IMAGE_TAG}"
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v2
+        with:
+          name: docker-image
+          path: image.tar
+          retention-days: 1
+
+      # Log in to Docker Hub and push the image
+      - name: Publish Docker image
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_PASS }}
+        run: |
+          echo "${DOCKERHUB_PASS}" | docker login --username "${DOCKERHUB_USERNAME}" --password-stdin
+          docker push "${IMAGE_TAG}"
