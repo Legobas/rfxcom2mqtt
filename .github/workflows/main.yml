@@ -2,9 +2,6 @@ name: CI/CD
 
 on: push
 
-env:
-  IMAGE_TAG: legobas/rfxcom2mqtt:latest
-
 jobs:
   build:
     name: Docker build
@@ -32,4 +29,4 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm/v6,linux/arm/v7
-          tags: ${IMAGE_TAG}
+          tags: legobas/rfxcom2mqtt:latest
