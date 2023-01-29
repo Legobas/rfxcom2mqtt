@@ -47,6 +47,7 @@ json examples:
 topic: 
 
     rfxcom2mqtt/commmand/Switch1
+
 json examples (lighting4, command identifies device id):
 
     {"command": "on"}
@@ -55,12 +56,22 @@ json examples (lighting4, command identifies device id):
 topic: 
 
     rfxcom2mqtt/commmand/Lights
+
 json examples (lighting2, unitCode identifies device):
 
-    {"unitCode":"2", "command": "on"}
-    {"unitCode":"2", "command": "off"}
-    {"unitCode":"3", "command": "on"}
-    {"unitCode":"3", "command": "off"}
+    {"unit":"Light1","command":"on"}
+
+the unitname can also be defined in the topic:
+
+    rfxcom2mqtt/command/Lights/Light1
+
+    {"command": "on"}
+
+### Healthcheck
+
+If healthcheck is enabled in the config, the rfxcom status will be read every minute.
+In case of an error the node process will exit.
+If installed in docker the container will try to restart try to reconnect to the RFXCOM device.
 
 ----
 

@@ -1,4 +1,5 @@
 debug: true
+healthcheck: true
 
 mqtt:
   base_topic: rfxcom2mqtt
@@ -52,6 +53,19 @@ devices:
 
   - id: '0x00ED400F'
     name: 'Lights'
+    units:
+      - unitCode: '1'
+        name: 'Light1'
+        title: 'Living Room'
+      - unitCode: '2'
+        name: 'Light2'
+        title: 'Kitchen'
+      - unitCode: '3'
+        name: 'Light3'
+        title: 'Garage'
+      - unitCode: '4'
+        name: 'Light4'
+        title: 'Garden'
     type: 'lighting2'
 
   - id: '0x3D090F'

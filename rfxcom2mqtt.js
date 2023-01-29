@@ -3,6 +3,7 @@
 const mqtt = require('mqtt');
 const rfxcom = require('rfxcom');
 const config = require('node-config-yaml').load("/app/data/config.yml");
+const cron = require('node-cron');
 
 const topic = 'rfxcom2mqtt/devices';
 const topic_will = 'rfxcom2mqtt/status';
@@ -14,73 +15,77 @@ console.log('RFXCOM2MQTT Starting');
 
 var debug = (config.debug) ? config.debug : false;
 if (debug) {
-  console.log(config);
+	console.log(config);
 }
 
 const will = { "topic": topic_will, "payload": "offline", "retain": "true" }
 const options = { "will": will }
 if (config.mqtt.username) {
-  options.username = config.mqtt.username;
-  options.password = config.mqtt.password;
+	options.username = config.mqtt.username;
+	options.password = config.mqtt.password;
 }
 
 var port = "1883"
 if (config.mqtt.port) {
-  port = config.mqtt.port;
+	port = config.mqtt.port;
 }
 
 var qos = 0
 if (config.mqtt.qos) {
-  qos = config.mqtt.qos;
+	qos = config.mqtt.qos;
 }
 
 const mqttClient = mqtt.connect(config.mqtt.server + ':' + port, options)
 
 mqttClient.on('connect', () => {
-  console.log('Connected to MQTT')
-  mqttClient.subscribe([topic_command], () => {
-    console.log(`Subscribing to topic '${topic_command}'`)
-  })
+	console.log('Connected to MQTT')
+	mqttClient.subscribe([topic_command], () => {
+		console.log(`Subscribing to topic '${topic_command}'`)
+	})
 })
 
 // MQTT Connect
 mqttClient.on('connect', () => {
-  mqttClient.publish(topic_will, 'online', { qos: qos, retain: config.mqtt.retain }, (error) => {
-    if (error) {
-      console.error(error)
-    }
-  })
+	mqttClient.publish(topic_will, 'online', { qos: qos, retain: config.mqtt.retain }, (error) => {
+		if (error) {
+			console.error(error)
+		}
+	})
 })
 
 const sendToMQTT = function (type, evt) {
-  var json = JSON.stringify(evt, null, 2)
-  json = json.slice(0, 1) + "\n  \"type\":\"" + type + "\"," + json.slice(1)
+	evt.type = type;
 
-  var device = evt.id;
-  if (type === "lighting4") {
-    device = evt.data
-  }
+	var device = evt.id;
+	if (type === "lighting4") {
+		device = evt.data
+	}
 
-  // Get device name from config
-  try {
-    var deviceConf = config.devices.find(dev => dev.id === device);
-    device = deviceConf.name;
-    var title = deviceConf.title
-    if (title) {
-      json = json.slice(0, 1) + "\n  \"title\":\"" + title + "\"," + json.slice(1)
-    }
-  } catch {
-    console.log("Unknown Device: ", device);
-  }
+	// Get device name from config
+	try {
+		var deviceConf = config.devices.find(dev => dev.id === device);
+		device = deviceConf.name;
+		var title = deviceConf.title
+		if (title) {
+			evt.title = title;
+		}
+		var command = deviceConf.command;
+		if (command) {
+			evt.command = command
+		}
+	} catch {
+		console.log("Unknown Device: ", device);
+	}
 
-  mqttClient.publish(topic + "/" + device, json, { qos: qos, retain: config.mqtt.retain }, (error) => {
-    if (error) {
-      console.error(error)
-    }
-  })
-  if (debug) {
-    console.log("RFXCOM Received:", json.replace(/[\n\r][ ]*/g, ''));
-  }
+	var json = JSON.stringify(evt, null, 2)
+	mqttClient.publish(topic + "/" + device, json, { qos: qos, retain: config.mqtt.retain }, (error) => {
+		if (error) {
+			console.error(error)
+		}
+	})
+	if (debug) {
+		console.log('MQTT out:', topic + "/" + device, json.replace(/[\n\r][ ]*/g, ''));
+	}
 }
 
 // RFXCOM Init
@@ -93,93 +98,134 @@ var lighting4 = new rfxcom.Lighting4(rfxtrx, rfxcom.lighting4.PT2262);
 var chime1 = new rfxcom.Chime1(rfxtrx, rfxcom.chime1.SELECT_PLUS);
 
 rfxtrx.initialise(function (error) {
-  if (error) {
-    throw new Error("Unable to initialise the RFXCOM device");
-  } else {
-    console.log("RFXCOM device initialised");
-  }
+	if (error) {
+		throw new Error("Unable to initialise the RFXCOM device");
+	} else {
+		console.log("RFXCOM device initialised");
+	}
 });
 
 // RFXCOM Transmit
 mqttClient.on('message', (topic, payload) => {
-  console.log('RFXCOM Transmit:', topic, " ", payload.toString())
+	if (debug) {
+		console.log('MQTT in:', topic, " ", payload.toString())
+	}
 
-  const message = JSON.parse(payload);
-  var deviceName = message.name;
-  if (!deviceName) {
-    deviceName = topic.slice(20);
-  }
-  var deviceId = "";
-  var deviceType = "";
-  var unitCode = "";
-  // Get device from config
-  try {
-    var deviceConf = config.devices.find(dev => dev.name === deviceName && (dev.command ? dev.command === message.command : true));
-    console.log("Device ", deviceName);
-    console.log("DeviceConf ", deviceConf);
-    deviceId = deviceConf.id;
-    deviceType = deviceConf.type
-    unitCode = message.unitCode
-  } catch {
-    console.log("Unknown Device:", deviceName);
-  }
+	const message = JSON.parse(payload);
+	var deviceName = message.name;
+	var unitName = message.unit;
+	if (!deviceName) {
+		const dn = topic.split("/");
+		if (dn[0] != "rfxcom2mqtt") {
+			console.log("Topic Error, should start with rfxcom2mqtt");
+			return;
+		}
+		if (dn[1] != "command") {
+			console.log("Topic Error, should start with rfxcom2mqtt/command");
+			return;
+		}
+		deviceName = dn[2];
+		if (typeof unitName == 'undefined' && dn.length > 3 && dn[3].length > 0) {
+			unitName = dn[3];
+		}
+	}
 
-  if (deviceType) {
-    const repeat = (config.rfxcom.transmit.repeat) ? config.rfxcom.transmit.repeat : 1
-    for (var i = 0; i < repeat; i++) {
-      if (deviceType === "lighting2") {
-        const cmd = message.command.split(" ")
-        var switchId = deviceId + (unitCode ? "/" + unitCode : "")
-        if (cmd[0] === "on") {
-          lighting2.switchOn(switchId);
-        } else if (cmd[0] === "off") {
-          lighting2.switchOff(switchId);
-        } else if (cmd[0] === "level") {
-          lighting2.setLevel(switchId, cmd[1]);
-        }
-        if (debug) {
-          console.log("Lighting2 ", deviceName, " - ", switchId, ": ", message.command);
-        }
-      }
-      if (deviceType === "lighting4") {
-        lighting4.sendData(deviceId);
-      }
-      if (deviceType === "chime1") {
-        chime1.chime(deviceId);
-      }
-      if (debug) {
-        console.log("Command sent to ", deviceName, ": ", message.command);
-      }
-      sleep(100);
-    }
-  } else {
-    console.log("No DeviceType, cannot send to ", deviceName);
-  }
+	var deviceId = "";
+	var deviceType = "";
+	var unitCode = "";
+	// Get device from config
+	try {
+		var deviceConf = config.devices.find(dev => dev.name === deviceName && (dev.command ? dev.command === message.command : true));
+		// console.log("Device ", deviceName);
+		deviceId = deviceConf.id;
+		deviceType = deviceConf.type
+		if (unitName) {
+			// console.log("UnitName ", unitName);
+			var unitConf = deviceConf.units.find(unit => unit.name === unitName);
+			unitCode = unitConf.unitCode
+			// console.log("UnitCode ", unitCode);
+		}
+	} catch {
+		console.log("Unknown Device:", deviceName, " unitCode:", unitCode);
+	}
+
+	if (deviceType) {
+		const repeat = (config.rfxcom.transmit.repeat) ? config.rfxcom.transmit.repeat : 1
+		for (var i = 0; i < repeat; i++) {
+			if (deviceType === "lighting2") {
+				const cmd = message.command.split(" ")
+				if (cmd[0] === "group") {
+					unitCode = "0";
+					message.command = cmd[1];
+				}
+				var switchId = deviceId + (unitCode ? "/" + unitCode : "")
+				// Lighting2 Command: on, off or level x
+				if (message.command === "on") {
+					// console.log("switchOn: ", switchId);
+					lighting2.switchOn(switchId);
+				} else if (message.command === "off") {
+					// console.log("switchOff: ", switchId);
+					lighting2.switchOff(switchId);
+				} else {
+					if (cmd[0] === "level") {
+						// console.log("setLevel: ", switchId, " ", cmd[1]);
+						lighting2.setLevel(switchId, cmd[1]);
+					}
+				}
+			}
+			if (deviceType === "lighting4") {
+				lighting4.sendData(deviceId);
+			}
+			if (deviceType === "chime1") {
+				chime1.chime(deviceId);
+			}
+			if (debug) {
+				console.log(deviceType, deviceName, switchId ? switchId : "", ":", message.command);
+			}
+			sleep(100);
+		}
+	} else {
+		console.log("No DeviceType, cannot send to ", deviceName);
+	}
 })
 
 
 // RFXCOM Receive
 if (config.rfxcom.receive) {
-  config.rfxcom.receive.forEach(function (protocol) {
-    rfxtrx.on(protocol, function (evt) { sendToMQTT(protocol, evt) });
-  });
+	config.rfxcom.receive.forEach(function (protocol) {
+		rfxtrx.on(protocol, function (evt) { sendToMQTT(protocol, evt) });
+	});
 }
 
 // RFXCOM Status
 rfxtrx.on("status", function (evt) {
-  var json = JSON.stringify(evt, function (key, value) {
-    if (key === 'subtype' || key === 'seqnbr' || key === 'cmnd') {
-      return undefined;
-    }
-    return value;
-  }, 2);
+	var json = JSON.stringify(evt, function (key, value) {
+		if (key === 'subtype' || key === 'seqnbr' || key === 'cmnd') {
+			return undefined;
+		}
+		return value;
+	}, 2);
 
-  mqttClient.publish(topic_info, json, { qos: qos, retain: config.mqtt.retain }, (error) => {
-    if (error) {
-      console.error(error);
-    }
-  })
-  console.log("RFXCOM Status:", json);
+	mqttClient.publish(topic_info, json, { qos: qos, retain: config.mqtt.retain }, (error) => {
+		if (error) {
+			console.error(error);
+		}
+	})
+	if (debug) {
+		if (debug) {
+			console.log('MQTT out:', topic_info, json.replace(/[\n\r][ ]*/g, ''));
+		}
+	}
+});
+
+// RFXCOM Disconnect
+rfxtrx.on("disconnect", function (evt) {
+	mqttClient.publish('rfxcom2mqtt/disconnected', 'disconnected', { qos: qos, retain: true }, (error) => {
+		if (error) {
+			console.error(error)
+		}
+	})
+	console.log("RFXCOM Disconnected");
 });
 
 function findDevice(device) {
@@ -187,7 +233,21 @@ function findDevice(device) {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+	return new Promise((resolve) => {
+		setTimeout(resolve, ms);
+	});
 }
+
+cron.schedule('* * * * *', () => {
+	if (config.healthcheck) {
+		if (debug) {
+			console.log("Healthcheck");
+		}
+		rfxtrx.getRFXStatus(function (error) {
+			if (error) {
+				console.log("Healthcheck: RFX Status ERROR");
+				process.exit();
+			}
+		});
+	}
+});
