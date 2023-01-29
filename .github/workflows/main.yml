@@ -17,7 +17,7 @@ jobs:
       - name: Build Docker image
         run: docker build --tag "${IMAGE_TAG}" .
 
-      # Archive and persist the Docker image
+# Archive and persist the Docker image
       - name: Save Docker image
         run: docker save --output image.tar "${IMAGE_TAG}"
       - name: Upload Docker image
@@ -27,7 +27,7 @@ jobs:
           path: image.tar
           retention-days: 1
 
-      # Log in to Docker Hub and push the image
+# Log in to Docker Hub and push the image
       - name: Publish Docker image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
