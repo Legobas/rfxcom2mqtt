@@ -69,7 +69,7 @@ the unitname can also be defined in the topic:
 
 ### Healthcheck
 
-If healthcheck is enabled in the config, the rfxcom status will be read every minute.
+If healthcheck is enabled in the config, the rfxcom status will checked every minute.
 In case of an error the node process will exit.
 If installed in docker the container will try to restart try to reconnect to the RFXCOM device.
 
