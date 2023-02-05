@@ -71,3 +71,4 @@ If installed in docker the container will try to restart try to reconnect to the
 The [RFXCOM](https://github.com/rfxcom/node-rfxcom) Node library for the communication with the [RFXCOM](http://www.rfxcom.com) RFXtrx433 433.92MHz Transceiver.
 
 The [MQTT.js](https://github.com/mqttjs/MQTT.js) library for sending and receiving MQTT messages.
+
