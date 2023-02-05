@@ -35,40 +35,28 @@ Example JSON message on topic `"rfxcom2mqtt/devices/0x5C02"`:
       "rssi": 6
     }
 
-### Publish command examples
-
-topic:
+### Publish command examples (topic/payload)
 
     rfxcom2mqtt/commmand/CucuDimmer
+    on
 
-json examples:
+    rfxcom2mqtt/commmand/CucuDimmer
+    off
 
-    {"command": "on"}
-    {"command": "level 15"}
-    {"command": "off"}
+    rfxcom2mqtt/commmand/CucuDimmer
+    level 15
 
-topic: 
+    rfxcom2mqtt/commmand/Switch1 (lighting4, payload identifies device)
+    on
 
     rfxcom2mqtt/commmand/Switch1
+    off
 
-json examples (lighting4, command identifies device id):
+    rfxcom2mqtt/commmand/Lights/Light1  (lighting2, unitName identifies device)
+    on
 
-    {"command": "on"}
-    {"command": "off"}
-
-topic: 
-
-    rfxcom2mqtt/commmand/Lights
-
-json examples (lighting2, unitCode identifies device):
-
-    {"unit":"Light1","command":"on"}
-
-the unitname can also be defined in the topic:
-
-    rfxcom2mqtt/command/Lights/Light1
-
-    {"command": "on"}
+    rfxcom2mqtt/commmand/Lights/Light1
+    off
 
 ### Healthcheck
 

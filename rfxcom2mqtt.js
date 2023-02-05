@@ -111,39 +111,41 @@ mqttClient.on('message', (topic, payload) => {
 		console.log('MQTT in:', topic, " ", payload.toString())
 	}
 
-	const message = JSON.parse(payload);
-	var deviceName = message.name;
-	var unitName = message.unit;
-	if (!deviceName) {
-		const dn = topic.split("/");
-		if (dn[0] != "rfxcom2mqtt") {
-			console.log("Topic Error, should start with rfxcom2mqtt");
-			return;
-		}
-		if (dn[1] != "command") {
-			console.log("Topic Error, should start with rfxcom2mqtt/command");
-			return;
-		}
-		deviceName = dn[2];
-		if (typeof unitName == 'undefined' && dn.length > 3 && dn[3].length > 0) {
-			unitName = dn[3];
-		}
+	var deviceName = "";
+	var unitName = "";
+	const dn = topic.split("/");
+	if (dn[0] != "rfxcom2mqtt") {
+		console.log("Topic Error, should start with rfxcom2mqtt");
+		return;
 	}
+	if (dn[1] != "command") {
+		console.log("Topic Error, should start with rfxcom2mqtt/command");
+		return;
+	}
+	deviceName = dn[2];
+	if (dn.length > 3 && dn[3].length > 0) {
+		unitName = dn[3];
+	}
+
+	var command = payload.toString().trim().toLowerCase();
 
 	var deviceId = "";
 	var deviceType = "";
 	var unitCode = "";
 	// Get device from config
 	try {
-		var deviceConf = config.devices.find(dev => dev.name === deviceName && (dev.command ? dev.command === message.command : true));
-		// console.log("Device ", deviceName);
+		var deviceConf = config.devices.find(dev => dev.name === deviceName && (dev.command ? dev.command === command : true));
+		// console.log("Device:", deviceName);
 		deviceId = deviceConf.id;
 		deviceType = deviceConf.type
 		if (unitName) {
-			// console.log("UnitName ", unitName);
+			// console.log("UnitName:", unitName);
 			var unitConf = deviceConf.units.find(unit => unit.name === unitName);
 			unitCode = unitConf.unitCode
-			// console.log("UnitCode ", unitCode);
+			// console.log("UnitCode:", unitCode);
+			if (unitCode) {
+				deviceId = deviceId + "/" + unitCode;
+			}
 		}
 	} catch {
 		console.log("Unknown Device:", deviceName, " unitCode:", unitCode);
@@ -153,23 +155,20 @@ mqttClient.on('message', (topic, payload) => {
 		const repeat = (config.rfxcom.transmit.repeat) ? config.rfxcom.transmit.repeat : 1
 		for (var i = 0; i < repeat; i++) {
 			if (deviceType === "lighting2") {
-				const cmd = message.command.split(" ")
+				const cmd = command.split(" ")
 				if (cmd[0] === "group") {
 					unitCode = "0";
-					message.command = cmd[1];
+					command = cmd[1];
 				}
-				var switchId = deviceId + (unitCode ? "/" + unitCode : "")
+				// console.log("deviceId:", deviceId, "command:", command);
 				// Lighting2 Command: on, off or level x
-				if (message.command === "on") {
-					// console.log("switchOn: ", switchId);
-					lighting2.switchOn(switchId);
-				} else if (message.command === "off") {
-					// console.log("switchOff: ", switchId);
-					lighting2.switchOff(switchId);
+				if (command === "on") {
+					lighting2.switchOn(deviceId);
+				} else if (command === "off") {
+					lighting2.switchOff(deviceId);
 				} else {
 					if (cmd[0] === "level") {
-						// console.log("setLevel: ", switchId, " ", cmd[1]);
-						lighting2.setLevel(switchId, cmd[1]);
+						lighting2.setLevel(deviceId, cmd[1]);
 					}
 				}
 			}
@@ -180,12 +179,12 @@ mqttClient.on('message', (topic, payload) => {
 				chime1.chime(deviceId);
 			}
 			if (debug) {
-				console.log(deviceType, deviceName, switchId ? switchId : "", ":", message.command);
+				console.log(deviceType, deviceName, deviceId, "["+command+"]");
 			}
 			sleep(100);
 		}
 	} else {
-		console.log("No DeviceType, cannot send to ", deviceName);
+		console.log("No DeviceType, cannot transmit command to ", deviceName);
 	}
 })
 
