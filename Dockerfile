@@ -1,8 +1,9 @@
 FROM node:latest
 
 WORKDIR /usr/app
-COPY package.json .
+COPY ./src/package.json .
 RUN npm install
-COPY . .
+RUN npm install -g ts-node typescript
+COPY ./src .
 
-CMD ["node", "rfxcom2mqtt.js"]
+CMD ["ts-node", "index.ts"]

@@ -1,0 +1,27 @@
+{
+    "name": "rfxcom2mqtt",
+    "repository": "https://github.com/sguernion/rfxcom2mqtt",
+    "author": "Sguernion<sguernion@github.com>",
+    "license": "Apache-2.0",
+    "version": "1.0.0",
+    "description": "RFXCOM to MQTT bridge",
+    "main": "src/index.ts",
+    "dependencies": {
+        "mqtt": "^4.3.7",
+        "node-config-yaml": "^0.1.4",
+        "node-cron": "^3.0.2",
+        "object-assign-deep": "^0.4.0",
+        "rfxcom": "^2.4.1",
+        "winston": "^3.11.0"
+    },
+    "scripts": {
+        "start": "node src/index.ts"
+    },
+    "devDependencies": {
+        "@tsconfig/node18": "^18.2.2",
+        "@types/node": "^20.11.6",
+        "@types/object-assign-deep": "^0.4.3",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    }
+}
