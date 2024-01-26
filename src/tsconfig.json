@@ -1,0 +1,15 @@
+{
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "compilerOptions": {
+    // Necessary to support yarn portals with the node-modules linker, used by yarn link (berry)
+    "preserveSymlinks": true,
+    "resolveJsonModule": true,
+    "outDir": "server",
+
+    // TODO: Turn this on and fix all the errors
+    "strict": true
+  },
+  "include": [
+    "./**/*.ts",
+  ],
+}

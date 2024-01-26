@@ -7,7 +7,18 @@ RFXCOM to MQTT bridge for RFXtrx433 devices
 All received RFXCOM events are published to the MQTT rfxcom2mqtt/devices/\<id\> topic.
 It is up to the MQTT receiver to filter these messages or to have a register/learning/pairing mechanism.
 
+## [Getting started](./docs/README.md)
+The [documentation](./docs/README.md) provides you all the information needed to get up and running! Make sure you don't skip sections if this is your first visit, as there might be important details in there for you.
+
 ## Usage
+
+<img align="left" height="100px" width="100px" src="https://user-images.githubusercontent.com/7738048/40914297-49e6e560-6800-11e8-8904-36cce896e5a8.png">
+
+### [Home Assistant Integration](./docs/usage/integrations/home_assistant.md)
+
+The easiest way to integrate Rfxcom2MQTT with Home Assistant is by
+using [MQTT discovery](https://www.home-assistant.io/integrations/mqtt#mqtt-discovery).
+This allows Rfxcom2MQTT to automatically add devices to Home Assistant.
 
 ### Configuration
 
@@ -18,45 +29,7 @@ List of available commands:
 [DeviceCommands](https://github.com/rfxcom/node-rfxcom/blob/master/DeviceCommands.md)
 
 
-### Subscribe to topic **rfxcom2mqtt/devices** to receive incoming messages.
-
-Example JSON message on topic `"rfxcom2mqtt/devices/0x5C02"`:
-
-    {
-      "title": "Bathroom Temp & Hum",
-      "type":"temperaturehumidity1",
-      "subtype": 13,
-      "id": "0x5C03",
-      "seqnbr": 12,
-      "temperature": 18,
-      "humidity": 74,
-      "humidityStatus": 3,
-      "batteryLevel": 9,
-      "rssi": 6
-    }
-
-### Publish command examples (topic/payload)
-
-    rfxcom2mqtt/commmand/CucuDimmer
-    on
-
-    rfxcom2mqtt/commmand/CucuDimmer
-    off
-
-    rfxcom2mqtt/commmand/CucuDimmer
-    level 15
-
-    rfxcom2mqtt/commmand/Switch1 (lighting4, payload identifies device)
-    on
-
-    rfxcom2mqtt/commmand/Switch1
-    off
-
-    rfxcom2mqtt/commmand/Lights/Light1  (lighting2, unitName identifies device)
-    on
-
-    rfxcom2mqtt/commmand/Lights/Light1
-    off
+### [MQTT Topics and Messages](./docs/usage/mqtt_topics_and_messages.md)
 
 ### Healthcheck
 
@@ -71,3 +44,30 @@ If installed in docker the container will try to restart try to reconnect to the
 The [RFXCOM](https://github.com/rfxcom/node-rfxcom) Node library for the communication with the [RFXCOM](http://www.rfxcom.com) RFXtrx433 433.92MHz Transceiver.
 
 The [MQTT.js](https://github.com/mqttjs/MQTT.js) library for sending and receiving MQTT messages.
+
+## Development
+
+```
+nvm install 18.18
+nvm use 18.18
+npm install
+
+ts-node src/dev.ts
+```
+
+### build docker image
+
+Build a local image
+
+```
+docker-compose build
+```
+
+build multi Arch image
+
+```
+docker buildx build \ 
+--platform linux/amd64,linux/arm/v7 \
+--push \
+-t sguernion/rfxcom2mqtt .
+```

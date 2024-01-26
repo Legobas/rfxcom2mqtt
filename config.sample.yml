@@ -1,6 +1,11 @@
 debug: true
 healthcheck: true
 
+homeassistant:
+  discovery: true
+  discovery_topic: homeassistant
+  discovery_device: rfxcom2mqtt
+
 mqtt:
   base_topic: rfxcom2mqtt
   server: tcp://<IP ADDRESS>
