@@ -6,7 +6,10 @@ type RecursivePartial<T> = {[P in keyof T]?: RecursivePartial<T[P]>;};
 export interface Settings {
     mock: boolean;
     loglevel: 'warn' | 'debug' | 'info' | 'error',
-    cache_state_persistent: boolean,
+    cacheState: {
+        enable: boolean,
+        saveInterval: number
+    },
     healthcheck: {
         enabled: boolean,
         cron: string
@@ -60,7 +63,7 @@ interface SettingDevice{
     name: string,
     friendlyName?: string,
     type?: string,
-    subType?: string,
+    subtype?: string,
     units?: Units[],
     options?: string[],
     repetitions?: number
@@ -95,6 +98,10 @@ const defaults: RecursivePartial<Settings> = {
     healthcheck: {
         enabled: true,
         cron: '* * * * *'
+    },
+    cacheState: {
+        enable: true,
+        saveInterval: 5 // interval in minutes
     },
     homeassistant: {
         discovery: true,

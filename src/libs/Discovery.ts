@@ -99,10 +99,12 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
   }
 
   async start(){
+    super.start();
     this.state.start();
   }
 
   async stop(){
+    super.stop();
     this.state.stop();
   }
 
@@ -114,35 +116,39 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
     let id = dn[4];
     let subTypeValue = dn[3];
     let entityName = id;
-    let unitCode = 0;
+    let entityTopic = id;
+    let unitCode = 1;
 
     //TODO check data
     
     // Used for units and forms part of the device id
     if (dn[5] !== undefined && dn[5] !== 'set' && dn[5].length > 0) {
       unitCode = parseInt(dn[5]);
+      entityTopic += '/' + unitCode;
+      entityName += '_' + unitCode;
     }
-    entityName = entityName + '/' + unitCode;
 
     logger.debug(`update ${deviceType}.${entityName} with value ${value}`);
     
     // get from save state
-    let entityState = this.state.get({id: entityName + '_' + unitCode,type:deviceType,subtype:data.message.subtype})
+    let entityState = this.state.get({id: entityName,type:deviceType,subtype:data.message.subtype})
     this.updateEntityStateFromValue(entityState,value);
-    this.rfxtrx.sendCommand(deviceType,subTypeValue,entityState.command,entityName);
-    this.mqtt.publish(this.mqtt.topics.devices + '/' + entityName, JSON.stringify(entityState),  (error: any) => {},{retain: true, qos: 1});
+    this.rfxtrx.sendCommand(deviceType,subTypeValue,entityState.rfxFunction,id+"/"+unitCode);
+    this.mqtt.publish(this.mqtt.topics.devices + '/' + entityTopic, JSON.stringify(entityState),  (error: any) => {},{retain: true, qos: 1});
   }
 
   updateEntityStateFromValue(entityState: any,value: string){
-    if( entityState.deviceType === 'lighting1' || entityState.deviceType === 'lighting2' || entityState.deviceType === 'lighting3' 
-        || entityState.deviceType === 'lighting5' || entityState.deviceType === 'lighting6') {
+    if( entityState.type === 'lighting1' || entityState.type === 'lighting2' || entityState.type === 'lighting3' 
+        || entityState.type === 'lighting5' || entityState.type === 'lighting6') {
       if (value === "On" || value === "Group On") {
+        //TODO load value from rfxcom commands
         entityState.commandNumber = (value === "Group On")?4:1;
-        entityState.command = 'switchOn';
+        entityState.rfxFunction = 'switchOn';
       } else {
         entityState.commandNumber = (value === "Group On")?3:0;
-        entityState.command = 'switchOff';
+        entityState.rfxFunction = 'switchOff';
       }
+      entityState.command = value;
     }
 
      //TODO get command for other deviceType
@@ -155,14 +161,16 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
     let id = payload.id;
     let deviceId = payload.subTypeValue+"_"+id.replace("0x","");
     let entityId = payload.subTypeValue+"_"+id.replace("0x","");
-    let entityTopic = payload.id 
+    let entityTopic = payload.id;
+    let entityName = payload.id;
     
-    if(payload.unitCode !== undefined && (payload.commandNumber === 0 || payload.commandNumber === 1)){
+    if(payload.unitCode !== undefined  && !this.rfxtrx.isGroup(payload)){
       entityId += '_' + payload.unitCode;
-      entityTopic += '/'+ payload.unitCode
+      entityTopic += '/'+ payload.unitCode;
+      entityName += '_'+payload.unitCode;
     }
 
-    this.state.set({id: id+"_"+payload.unitCode,type:payload.type,subtype:payload.subtype},payload,"event");
+    this.state.set({id: entityName,type:payload.type,subtype:payload.subtype},payload,"event");
 
     const deviceJson = new DeviceEntity([devicePrefix+'_'+deviceId],deviceId);
 
@@ -190,8 +198,8 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
       let state_off="Off";
       let state_on="On";
       let entityName = entityId;
-      if( payload.command === 1 || payload.command === 3){
-         state_off="Group Off";
+      if(this.rfxtrx.isGroup(payload)){
+         state_off="Group off";
          state_on="Group On";
          entityName+="_group"
       }
@@ -227,9 +235,11 @@ export class BridgeDiscovery extends AbstractDiscovery{
   }
 
   async start(){
+    super.start();
   }
 
   async stop(){
+   super.stop();
   }
 
   onMQTTMessage(data: MQTTMessage){
@@ -258,7 +268,7 @@ export class BridgeDiscovery extends AbstractDiscovery{
         origin: this.discoveryOrigin,
         state_topic: this.mqtt.topics.base +'/'+this.mqtt.topics.info,
         unique_id: 'bridge_rfxcom2mqtt_coordinator_version',
-        value_template:"{{ value_json.firmwareVersion }}"
+        value_template:"{{ value_json.coordinator.firmwareVersion }}"
       };
       this.publishDiscovery('sensor/bridge_rfxcom2mqtt_coordinator_version/version/config',JSON.stringify(json));
 

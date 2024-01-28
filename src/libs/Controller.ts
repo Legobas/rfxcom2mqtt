@@ -33,8 +33,8 @@ export default class Controller implements MqttEventListener{
     }
 
     async start(): Promise<void> {
-        this.discovery.start();
         logger.info('Controller Starting');
+        this.discovery.start();
         try {
             await this.rfxBridge.initialise();
         } catch (error: any) {
@@ -132,14 +132,15 @@ export default class Controller implements MqttEventListener{
 
 
     sendToMQTT(type: any, evt: any,deviceConf: any) {
-        // Add type to event
+        logger.info("receive from rfxcom : "+JSON.stringify(evt));
+        // Add type to event!
         evt.type = type;
       
         let deviceId = evt.id;
         if (type === 'lighting4') {
           deviceId = evt.data;
         }
-      
+
         // Define default topic entity
         let topicEntity = deviceId;
       
@@ -151,13 +152,13 @@ export default class Controller implements MqttEventListener{
         }
       
         const json = JSON.stringify(evt, null, 2);
-        this.mqttClient.publish(this.mqttClient.topics.devices + '/' + topicEntity, json, (error: any) => {});
-
         const payload = JSON.parse(json);
-      
-        if(payload.unitCode !== undefined ){
+
+        if(payload.unitCode !== undefined && !this.rfxBridge.isGroup(payload)){
           topicEntity += '/' + payload.unitCode;
         }
+
+        this.mqttClient.publish(this.mqttClient.topics.devices + '/' + topicEntity, json, (error: any) => {});
       
         if( this.config.homeassistant?.discovery ){
             this.discovery.publishDiscoveryToMQTT( {device: true, payload: payload });

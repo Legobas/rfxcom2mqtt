@@ -6,6 +6,7 @@ import logger from './logger';
 
 
 export interface IRfxcom{
+  isGroup(payload: any): boolean;
   initialise(): Promise<void>;
   getStatus(callback: any): void;
   onStatus(callback: any): void;
@@ -48,7 +49,7 @@ export class MockRfxcom implements IRfxcom{
   }
   subscribeProtocolsEvent(callback: any){
     logger.info('RFXCOM Mock subscribeProtocolsEvent');
-    callback('lighting1', {id:'mocked_device2',
+    callback('lighting2', {id:'mocked_device2',
       "seqnbr": 7,
       "subtype": 0,
       "unitCode": 2,
@@ -59,6 +60,12 @@ export class MockRfxcom implements IRfxcom{
       "type": "lighting2",
       "subTypeValue": "AC"
     }, undefined);
+  }
+  isGroup(payload: any): boolean {
+    if(payload.type === 'lighting2'){
+      return (payload.commandNumber === 3 || payload.commandNumber === 4);
+    }
+    return false;
   }
   getSubType(type: string,subType: string){
     logger.info('RFXCOM Mock get subtype');
@@ -89,6 +96,13 @@ export default class Rfxcom implements IRfxcom{
   
     get(){
       return this.rfxtrx;
+    }
+
+    isGroup(payload: any): boolean {
+      if(payload.type === 'lighting2'){
+        return (payload.commandNumber === 3 || payload.commandNumber === 4);
+      }
+      return false;
     }
   
     async initialise(): Promise<void>{
@@ -147,7 +161,7 @@ export default class Rfxcom implements IRfxcom{
           }
           return value;
         }, 2);
-
+        logger.info('RFXCOM listen status : '+json);
         if(json !== undefined){
           logger.info('RFXCOM listen status : '+json);
           callback(JSON.parse(json) as RfxcomInfo);
@@ -165,7 +179,7 @@ export default class Rfxcom implements IRfxcom{
 
     onCommand(deviceType: string, entityName: string, payload: any){
       let transmitRepetitions: number| undefined;
-      let subType: string;
+      let subtype: string;
       let deviceFunction: string;
 
       if (!this.validRfxcomDevice(deviceType)) {
@@ -174,7 +188,7 @@ export default class Rfxcom implements IRfxcom{
       }
 
       // We will need subType from payload
-      subType = payload.subType;
+      subtype = payload.subtype;
     
       deviceFunction = payload.deviceFunction;
 
@@ -203,8 +217,8 @@ export default class Rfxcom implements IRfxcom{
 
         deviceOptions = deviceConf.options;
 
-        if (deviceConf.subType !== undefined) {
-          subType = deviceConf.subType;
+        if (deviceConf.subtype !== undefined) {
+          subtype = deviceConf.subtype;
         }
 
         
@@ -212,16 +226,16 @@ export default class Rfxcom implements IRfxcom{
         
       }
 
-      if (subType === undefined) {
-        throw new Error('Subtype not defined in payload or config');
+      if (subtype === undefined) {
+        throw new Error('subtype not defined in payload or config');
       }
 
       // Instantiate the device class
       let device;
       if (deviceOptions) {
-        device = new rfxcom[deviceType](this.rfxtrx.get(), payload.subType, deviceOptions);
+        device = new rfxcom[deviceType](this.rfxtrx.get(), payload.subtype, deviceOptions);
       } else {
-        device = new rfxcom[deviceType](this.rfxtrx.get(), payload.subType);
+        device = new rfxcom[deviceType](this.rfxtrx.get(), payload.subtype);
       }
 
       const repeat: number = (transmitRepetitions) ? transmitRepetitions : 1;
@@ -255,7 +269,6 @@ export default class Rfxcom implements IRfxcom{
             // Add type to event
             evt.type = protocol;
             evt.deviceName = rfxcom.deviceNames[packetType][evt.subtype]
-
             let deviceId = evt.id;
             if (evt.type === 'lighting4') {
              deviceId = evt.data;
@@ -292,7 +305,8 @@ export default class Rfxcom implements IRfxcom{
 
     sendCommand(deviceType: string ,subTypeValue: string ,command: string | undefined  ,entityName: string){
       if( command !== undefined){
-        let subType = this.rfxtrx.getSubType(deviceType,subTypeValue);
+        logger.debug("send rfxcom command : "+command+" for device :"+deviceType+"."+entityName);
+        let subType = this.getSubType(deviceType,subTypeValue);
         let device = new rfxcom[this.capitalize(deviceType)](this.rfxtrx, subType);
         device[command](entityName);
       }

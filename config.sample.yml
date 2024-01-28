@@ -1,5 +1,11 @@
-debug: true
-healthcheck: true
+
+loglevel: 'info'
+healthcheck:
+  enabled: true
+  cron: '*/5 * * * *'
+cacheState:
+  enable: true,
+  saveInterval: 5
 
 homeassistant:
   discovery: true

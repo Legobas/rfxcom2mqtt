@@ -4,23 +4,25 @@ import fs from 'fs';
 import objectAssignDeep from 'object-assign-deep';
 import logger from './logger';
 
-const saveInterval = 1000 * 60 * 5; // 5 minutes
+const saveInterval = 1000 * 60 * 1; // 1 minutes
 
 class State {
     private state: {[s: string | number]: KeyValue} = {};
     private file = process.env.RFXCOM2MQTT_DATA_STATE ?? '/app/data/state.json';
     private timer?: NodeJS.Timeout= undefined;
     private config: Settings;
+    private saveInterval: number;
 
     constructor(config: Settings) {
         this.config = config;
+        this.saveInterval = 1000 * 60 * this.config.cacheState.saveInterval;
     }
 
     start(): void {
         this.load();
 
         // Save the state on every interval
-        this.timer = setInterval(() => this.save(), saveInterval);
+        this.timer = setInterval(() => this.save(), this.saveInterval);
     }
 
     stop(): void {
@@ -42,7 +44,7 @@ class State {
     }
 
     private save(): void {
-        if (this.config.cache_state_persistent) {
+        if (this.config.cacheState.enable) {
             logger.debug(`Saving state to file ${this.file}`);
             const json = JSON.stringify(this.state, null, 4);
             try {
