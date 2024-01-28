@@ -10,6 +10,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: sguernion/rfxcom2mqtt
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -27,6 +32,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          push: true
           platforms: linux/amd64, linux/arm64/v8, linux/arm/v7
-          tags: sguernion/rfxcom2mqtt:latest
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
