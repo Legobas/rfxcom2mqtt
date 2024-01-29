@@ -1,5 +1,5 @@
 
-import {Settings,read} from './Settings';
+import {Settings, SettingDevice, read} from './Settings';
 import Discovery from './Discovery';
 import Mqtt from './Mqtt';
 import Rfxcom, {IRfxcom,MockRfxcom} from './RfxcomBridge';
@@ -25,7 +25,7 @@ export default class Controller implements MqttEventListener{
         this.config = read(file);
         logger.setLevel(this.config.loglevel);
         logger.info("configuration : "+JSON.stringify(this.config));
-        this.rfxBridge = this.config.mock ? new MockRfxcom() : new Rfxcom(this.config.rfxcom);
+        this.rfxBridge = this.config.mock ? new MockRfxcom(this.config.rfxcom) : new Rfxcom(this.config.rfxcom);
         this.mqttClient = new Mqtt(this.config)
         this.discovery = new Discovery( this.mqttClient, this.rfxBridge, this.config );
         this.mqttClient.addListener(this.discovery);
@@ -120,7 +120,7 @@ export default class Controller implements MqttEventListener{
             let entityName = dn[3];
             // Used for units and forms part of the device id
             if (dn[4] !== undefined && dn[4].length > 0) {
-                entityName = entityName + '/' + dn[4];
+                entityName += '/' + dn[4];
             }
             this.rfxBridge.onCommand(deviceType, entityName, data.message);
             return;
@@ -131,7 +131,7 @@ export default class Controller implements MqttEventListener{
     }
 
 
-    sendToMQTT(type: any, evt: any,deviceConf: any) {
+    sendToMQTT(type: any, evt: any,deviceConf?: SettingDevice) {
         logger.info("receive from rfxcom : "+JSON.stringify(evt));
         // Add type to event!
         evt.type = type;
@@ -145,10 +145,8 @@ export default class Controller implements MqttEventListener{
         let topicEntity = deviceId;
       
         // Get device config if available
-        if (deviceConf instanceof Object) {
-          if (deviceConf.name !== undefined) {
+        if (deviceConf?.name !== undefined) {
             topicEntity = deviceConf.name;
-          }
         }
       
         const json = JSON.stringify(evt, null, 2);
@@ -156,6 +154,15 @@ export default class Controller implements MqttEventListener{
 
         if(payload.unitCode !== undefined && !this.rfxBridge.isGroup(payload)){
           topicEntity += '/' + payload.unitCode;
+          if (deviceConf?.units) {
+            deviceConf?.units.forEach( unit => {
+                if(parseInt(unit.unitCode)  === parseInt(payload.unitCode)){
+                    if (unit.name !) {
+                      topicEntity = unit.name;
+                    }
+                }
+            });
+          }
         }
 
         this.mqttClient.publish(this.mqttClient.topics.devices + '/' + topicEntity, json, (error: any) => {});

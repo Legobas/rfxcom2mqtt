@@ -58,9 +58,9 @@ export interface SettingRfxcom{
 }
 
 
-interface SettingDevice{
+export interface SettingDevice{
     id: string,
-    name: string,
+    name?: string,
     friendlyName?: string,
     type?: string,
     subtype?: string,
@@ -69,10 +69,10 @@ interface SettingDevice{
     repetitions?: number
 }
 
-interface Units{
+export interface Units{
     unitCode: string,
+    name: string,
     friendlyName: string,
-    title?: string,  
 }
 
 export function read(file: string): Settings {

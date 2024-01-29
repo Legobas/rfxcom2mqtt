@@ -38,43 +38,39 @@ Contains the state of the bridge, this message is published as retained. Payload
 
 Contains information of an device.
 
-Example payload on topic `"rfxcom2mqtt/devices/0x5C02"`:
+Example payload on topic `"rfxcom2mqtt/devices/0x01A4F9BE/2"`:
 ```
-    {
-      "title": "Bathroom Temp & Hum",
-      "type":"temperaturehumidity1",
-      "subtype": 13,
-      "id": "0x5C03",
-      "seqnbr": 12,
-      "temperature": 18,
-      "humidity": 74,
-      "humidityStatus": 3,
-      "batteryLevel": 9,
-      "rssi": 6
-    }
+   {
+    "seqnbr": 4,
+    "subtype": 0,
+    "id": "0x01A4F9BE",
+    "unitCode": 2,
+    "commandNumber": 0,
+    "command": "Off",
+    "level": 0,
+    "rssi": 4,
+    "type": "lighting2",
+    "deviceName": [
+        "KlikAanKlikUit",
+        "HomeEasy UK",
+        "Chacon",
+        "NEXA",
+        "Intertechno"
+    ],
+    "subTypeValue": "AC"
+   }
 ```
 
 ### Publish command examples (topic/payload)
 
 ```
-    rfxcom2mqtt/commmand/CucuDimmer
+    rfxcom2mqtt/cmd/lighting2/0/0x01A4F9BE/2/set
     on
 
-    rfxcom2mqtt/commmand/CucuDimmer
+    rfxcom2mqtt/cmd/lighting2/0/0x01A4F9BE/2/set
     off
 
-    rfxcom2mqtt/commmand/CucuDimmer
+    rfxcom2mqtt/cmd/lighting2/0/0x01A4F9BE/2/set
     level 15
 
-    rfxcom2mqtt/commmand/Switch1 (lighting4, payload identifies device)
-    on
-
-    rfxcom2mqtt/commmand/Switch1
-    off
-
-    rfxcom2mqtt/commmand/Lights/Light1  (lighting2, unitName identifies device)
-    on
-
-    rfxcom2mqtt/commmand/Lights/Light1
-    off
 ```

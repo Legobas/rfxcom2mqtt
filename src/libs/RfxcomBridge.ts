@@ -1,6 +1,6 @@
 
 var rfxcom  = require('rfxcom');
-import { SettingRfxcom } from './Settings';
+import { SettingRfxcom,SettingDevice } from './Settings';
 import { RfxcomInfo } from './models';
 import logger from './logger';
 
@@ -19,6 +19,13 @@ export interface IRfxcom{
 }
 
 export class MockRfxcom implements IRfxcom{
+
+  private config: SettingRfxcom;
+
+  constructor(config: SettingRfxcom){
+    this.config = config
+  }
+
   initialise(): Promise<void>{
     return new Promise((resolve, reject) => {
       logger.info('RFXCOM Mock device initialised');
@@ -49,17 +56,19 @@ export class MockRfxcom implements IRfxcom{
   }
   subscribeProtocolsEvent(callback: any){
     logger.info('RFXCOM Mock subscribeProtocolsEvent');
-    callback('lighting2', {id:'mocked_device2',
+    const deviceId = 'mocked_device2';
+    let deviceConf =  this.config.devices.find((dev: any) => dev.id === deviceId);
+    callback('lighting2', {id:deviceId,
       "seqnbr": 7,
       "subtype": 0,
-      "unitCode": 2,
+      "unitCode": "1",
       "commandNumber": 0,
       "command": "Off",
       "level": 0,
       "rssi": 5,
       "type": "lighting2",
       "subTypeValue": "AC"
-    }, undefined);
+    }, deviceConf);
   }
   isGroup(payload: any): boolean {
     if(payload.type === 'lighting2'){
@@ -101,6 +110,12 @@ export default class Rfxcom implements IRfxcom{
     isGroup(payload: any): boolean {
       if(payload.type === 'lighting2'){
         return (payload.commandNumber === 3 || payload.commandNumber === 4);
+      }
+      if(payload.type === 'lighting1'){
+        return (payload.commandNumber === 5 || payload.commandNumber === 6);
+      }
+      if(payload.type === 'lighting6'){
+        return (payload.commandNumber === 2 || payload.commandNumber === 3);
       }
       return false;
     }
@@ -169,12 +184,12 @@ export default class Rfxcom implements IRfxcom{
       });
     }
 
-    private getDeviceConfig(deviceId: string){
+    private getDeviceConfig(deviceId: string): SettingDevice | undefined{
       if (this.config.devices === undefined) {
         return;
       }
     
-      return this.config.devices.find((dev: any) => dev.id === deviceId);
+      return this.config.devices.find((dev: SettingDevice) => dev.id === deviceId);
     }
 
     onCommand(deviceType: string, entityName: string, payload: any){
@@ -220,7 +235,6 @@ export default class Rfxcom implements IRfxcom{
         if (deviceConf.subtype !== undefined) {
           subtype = deviceConf.subtype;
         }
-
         
         transmitRepetitions = deviceConf.repetitions;
         

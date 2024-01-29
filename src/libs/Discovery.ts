@@ -2,7 +2,7 @@
 
 var rfxcom  = require('rfxcom');
 import {IRfxcom} from './RfxcomBridge';
-import {Settings, SettingHass} from './Settings';
+import {Settings, SettingHass, SettingDevice} from './Settings';
 import Mqtt from './Mqtt';
 import { DeviceEntity, DeviceBridge,BridgeInfo,MQTTMessage,MqttEventListener } from './models';
 import utils from './utils';
@@ -92,9 +92,11 @@ export default class Discovery implements MqttEventListener{
 export class HomeassistantDiscovery extends AbstractDiscovery{
 
   protected state: State;
+  protected devicesConfig: SettingDevice[];
 
   constructor(mqtt: Mqtt, rfxtrx: IRfxcom, config : Settings){
     super(mqtt, rfxtrx, config);
+    this.devicesConfig = config.rfxcom.devices;
     this.state = new State(config);
   }
 
@@ -132,24 +134,42 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
     
     // get from save state
     let entityState = this.state.get({id: entityName,type:deviceType,subtype:data.message.subtype})
+    entityState.deviceType = deviceType;
     this.updateEntityStateFromValue(entityState,value);
-    this.rfxtrx.sendCommand(deviceType,subTypeValue,entityState.rfxFunction,id+"/"+unitCode);
-    this.mqtt.publish(this.mqtt.topics.devices + '/' + entityTopic, JSON.stringify(entityState),  (error: any) => {},{retain: true, qos: 1});
+    this.rfxtrx.sendCommand(deviceType,subTypeValue,entityState.rfxFunction,entityTopic);
+    this.mqtt.publish(this.mqtt.topics.devices + '/' + entityName, JSON.stringify(entityState),  (error: any) => {},{retain: true, qos: 1});
   }
 
   updateEntityStateFromValue(entityState: any,value: string){
-    if( entityState.type === 'lighting1' || entityState.type === 'lighting2' || entityState.type === 'lighting3' 
-        || entityState.type === 'lighting5' || entityState.type === 'lighting6') {
-      if (value === "On" || value === "Group On") {
-        //TODO load value from rfxcom commands
-        entityState.commandNumber = (value === "Group On")?4:1;
-        entityState.rfxFunction = 'switchOn';
-      } else {
-        entityState.commandNumber = (value === "Group On")?3:0;
-        entityState.rfxFunction = 'switchOff';
+    if( entityState.deviceType === 'lighting1' || entityState.deviceType === 'lighting2' || entityState.deviceType === 'lighting3'
+    || entityState.deviceType === 'lighting5' || entityState.deviceType === 'lighting6' ) {
+      const cmd = value.toLowerCase().split(" ")
+      let command = cmd[0];
+      if (cmd[0] === "group") {
+        command = cmd[1];
+       
       }
-      entityState.command = value;
+      if (command === "on") {
+        entityState.commandNumber = (cmd[0] === "group")?4:1; //WORK only for lithing2
+        entityState.rfxFunction = 'switchOn';
+      } else if (command === "off") {
+        entityState.rfxFunction = (cmd[0] === "group")?3:0; //WORK only for lithing2
+        entityState.rfxCommand = 'switchOff';
+      }else{
+        if (cmd[0] === "level") {
+          entityState.rfxFunction = 'setLevel';
+          entityState.rfxOpt = cmd[1];
+        }
+      }
+    }else if (entityState.deviceType === "lighting4") {
+      entityState.rfxFunction = 'sendData';
+    }else if (entityState.deviceType === "chime1") {
+      entityState.rfxFunction = 'chime';
+    } else {
+      logger.error('device type ('+entityState.deviceType+') not supported');
     }
+
+    
 
      //TODO get command for other deviceType
   }
@@ -160,19 +180,42 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
     const devicePrefix = this.config.discovery_device;
     let id = payload.id;
     let deviceId = payload.subTypeValue+"_"+id.replace("0x","");
+    let deviceTopic = payload.id 
+    let deviceName = deviceId;
     let entityId = payload.subTypeValue+"_"+id.replace("0x","");
-    let entityTopic = payload.id;
     let entityName = payload.id;
-    
+    let entityTopic = payload.id 
+
+    const deviceConf = this.devicesConfig.find((dev: any) => dev.id === id);
+
+    if (deviceConf?.name !== undefined) {
+      entityTopic = deviceConf.name;
+      deviceTopic = deviceConf.name;
+    }
+
+
     if(payload.unitCode !== undefined  && !this.rfxtrx.isGroup(payload)){
       entityId += '_' + payload.unitCode;
       entityTopic += '/'+ payload.unitCode;
       entityName += '_'+payload.unitCode;
+      if (deviceConf?.units) {
+        deviceConf?.units.forEach( unit => {
+            if(parseInt(unit.unitCode)  === parseInt(payload.unitCode)){
+                if (unit.name !) {
+                  entityTopic = unit.name;
+                }
+            }
+        });
+      }
     }
 
     this.state.set({id: entityName,type:payload.type,subtype:payload.subtype},payload,"event");
 
-    const deviceJson = new DeviceEntity([devicePrefix+'_'+deviceId],deviceId);
+    if (deviceConf?.friendlyName) {
+	    deviceName = deviceConf?.friendlyName;
+    }
+
+    const deviceJson = new DeviceEntity([devicePrefix+'_'+deviceId,devicePrefix+'_'+deviceName],deviceName);
 
     if( payload.rssi !== undefined ){
       const json = {
@@ -182,16 +225,16 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
         entity_category: "diagnostic",
         icon: "mdi:signal",
         json_attributes_topic: this.topicDevice + '/' + entityTopic,
-        name: deviceId+" Linkquality",
-        object_id: deviceId+'_linkquality',
+        name: deviceName+" Linkquality",
+        object_id: deviceTopic+'_linkquality',
         origin: this.discoveryOrigin,
         state_class: "measurement",
         state_topic: this.topicDevice + '/' + entityTopic,
-        unique_id: deviceId +'_linkquality_' + devicePrefix,
+        unique_id: deviceTopic +'_linkquality_' + devicePrefix,
         unit_of_measurement:"dBm",
         value_template: "{{ value_json.rssi }}"
       };
-      this.publishDiscovery('sensor/' + deviceId +'/linkquality/config',JSON.stringify(json));
+      this.publishDiscovery('sensor/' + deviceTopic +'/linkquality/config',JSON.stringify(json));
     }
     if( payload.type === 'lighting1' || payload.type === 'lighting2' || payload.type === 'lighting3'
         || payload.type === 'lighting5' || payload.type === 'lighting6' ){
@@ -221,7 +264,7 @@ export class HomeassistantDiscovery extends AbstractDiscovery{
         unique_id: entityId+'_'+devicePrefix,
         value_template:"{{ value_json.command }}"
       };
-      this.publishDiscovery('switch/' + entityId +'/config',JSON.stringify(json));
+      this.publishDiscovery('switch/' + entityTopic +'/config',JSON.stringify(json));
     }
   
   }
