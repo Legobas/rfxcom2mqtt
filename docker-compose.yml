@@ -2,13 +2,13 @@ version: "3.8"
 
 services: 
   rfxcom2mqtt:
-    image: legobas/rfxcom2mqtt
+    image: sguernion/rfxcom2mqtt
     container_name: rfxcom2mqtt
-    build: /home/legobas/rfxcom2mqtt
+    build: ./
     volumes:
-      - /home/legobas/data/rfxcom2mqtt:/app/data
+      - ./config:/app/data
     devices:
       - /dev/ttyUSB1:/dev/ttyUSB0
     environment:
-      - TZ=Europe/Amsterdam
+      - TZ=Europe/Paris
     restart: unless-stopped
